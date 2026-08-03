@@ -1,0 +1,35 @@
+from models import ItemCreate, Item, ItemKind
+from sqlite3 import Connection
+
+
+def get_all_items(conn: Connection) -> list[Item]:
+    result = conn.execute("SELECT * FROM item").fetchall()
+
+    return [Item(**x) for x in result]
+
+def get_items_of_kind(conn: Connection, kind: ItemKind) -> list[Item]:
+    result = conn.execute("SELECT * FROM item WHERE kind = ?", (kind,)).fetchall()
+
+    return [Item(**x) for x in result]
+
+def get_item(conn, id: int) -> Item:
+    result = conn.execute("SELECT * FROM item WHERE id = ?", (id,)).fetchone()
+
+    return Item(**result)
+
+def create_item(conn: Connection, kind: ItemKind, name: str) -> Item:
+    item_in = ItemCreate(kind=kind, data={"name": name})
+
+    result = conn.execute("INSERT INTO item(kind,data) VALUES(?,?) RETURNING *", (item_in.kind, item_in.data)).fetchone()
+
+    return Item(**result)
+
+def update_item(conn: Connection, id: int, data: dict) -> Item:
+    result = conn.execute("UPDATE item SET data = ? WHERE id = ? RETURNING *", (data, id)).fetchone()
+
+    return Item(**result)
+
+
+def delete_item(conn: Connection, id: int) -> Item:
+    result = conn.execute("DELETE FROM item WHERE id = ? RETURNING *", (id,)).fetchone()
+    return Item(**result)
