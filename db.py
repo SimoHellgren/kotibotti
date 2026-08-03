@@ -1,12 +1,13 @@
-from pathlib import Path
-import sqlite3
 import json
+import sqlite3
+from pathlib import Path
 
 SCHEMA_PATH = Path(__file__).with_name("schema.sql")
 
 # might be favorable to eventually just do __conform__ instead
 sqlite3.register_adapter(dict, json.dumps)
 sqlite3.register_converter("JSON", json.loads)
+
 
 def connect(path: Path) -> sqlite3.Connection:
     conn = sqlite3.connect(path, detect_types=sqlite3.PARSE_DECLTYPES)
