@@ -32,7 +32,7 @@ async def list_freezer(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     with connect(DB_PATH) as conn:
         items = crud.freezer.get_all(conn)
 
-    msg = "\n".join(x.data["name"] for x in items)
+    msg = "\n".join(x.data.name for x in items)
 
     await query.answer()
 
