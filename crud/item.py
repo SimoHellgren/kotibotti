@@ -30,8 +30,8 @@ def get(conn, id: int) -> Item:
     return Item(**result)
 
 
-def create(conn: Connection, kind: ItemKind, name: str) -> Item:
-    item_in = ItemCreate(kind=kind, data={"name": name})
+def create(conn: Connection, kind: ItemKind, data: dict) -> Item:
+    item_in = ItemCreate(kind=kind, data=data)
 
     result = conn.execute(
         "INSERT INTO item(kind,data) VALUES(?,?) RETURNING *",
