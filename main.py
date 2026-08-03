@@ -1,10 +1,8 @@
-import json
 import logging
 import os
 from pathlib import Path
 
 from dotenv import load_dotenv
-from pydantic import BaseModel
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import (
     ApplicationBuilder,
@@ -13,9 +11,13 @@ from telegram.ext import (
     ContextTypes,
 )
 
+import crud
+from db import connect
+
 load_dotenv()
 
 TOKEN = os.getenv("BOT_TOKEN")
+DB_PATH = Path(os.getenv("", "./db.sqlite"))
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -24,35 +26,13 @@ logging.basicConfig(
 logging.getLogger("httpx").setLevel(logging.WARNING)
 
 
-class FreezerItem(BaseModel):
-    name: str
-
-
-class Freezer:
-    def __init__(self, path: Path):
-        self.path = path
-
-        if not self.path.exists():
-            self.path.write_text(json.dumps([]), encoding="utf-8")
-
-    def ls(self):
-        contents = json.load(self.path.open(encoding="utf-8"))
-
-        items = [FreezerItem(name=x) for x in contents]
-
-        return items
-
-
-def get_freezer():
-    return Freezer(path=Path("./data/freezer.json"))
-
-
 async def list_freezer(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
 
-    freezer = get_freezer()
+    with connect(DB_PATH) as conn:
+        items = crud.freezer.get_all(conn)
 
-    msg = "\n".join(x.name for x in freezer.ls())
+    msg = "\n".join(x.data["name"] for x in items)
 
     await query.answer()
 
