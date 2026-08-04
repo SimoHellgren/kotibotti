@@ -3,7 +3,7 @@ from sqlite3 import Connection
 from models import Item, ItemCreate, ItemKind
 
 __all__ = [
-    "create",
+    "add",
     "delete",
     "get",
     "get_all",
@@ -30,7 +30,7 @@ def get(conn, id: int) -> Item:
     return Item(**result)
 
 
-def create(conn: Connection, kind: ItemKind, data: dict) -> Item:
+def add(conn: Connection, kind: ItemKind, data: dict) -> Item:
     item_in = ItemCreate(kind=kind, data=data)
 
     result = conn.execute(

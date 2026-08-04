@@ -5,7 +5,7 @@ from models import FreezerData, FreezerItem, Item, ItemKind
 from . import item
 
 __all__ = [
-    "create",
+    "add",
     "delete",
     "get",
     "get_all",
@@ -28,9 +28,9 @@ def get(conn: Connection, id: int) -> FreezerItem:
     return _to_freezer_item(item.get(conn, id))
 
 
-def create(conn: Connection, data: dict) -> FreezerItem:
+def add(conn: Connection, data: dict) -> FreezerItem:
     validated = FreezerData(**data)
-    return _to_freezer_item(item.create(conn, ItemKind.freezer, validated.model_dump()))
+    return _to_freezer_item(item.add(conn, ItemKind.freezer, validated.model_dump()))
 
 
 def update(conn: Connection, id: int, data: dict) -> FreezerData:

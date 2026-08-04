@@ -71,7 +71,7 @@ async def handle_freezer_input(update: Update, context: ContextTypes.DEFAULT_TYP
 
     with connect(DB_PATH) as conn:
         for item in filter(None, items):
-            crud.freezer.create(conn, {"name": item})
+            crud.freezer.add(conn, {"name": item})
 
     return ConversationHandler.END
 
