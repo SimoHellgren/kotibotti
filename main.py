@@ -42,7 +42,7 @@ async def list_freezer(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     with connect(DB_PATH) as conn:
         items = crud.freezer.get_all(conn)
 
-    msg = "\n".join(x.data.name for x in items)
+    msg = "\n".join(x.data.name for x in sorted(items, key=lambda x: x.data.name))
 
     await query.answer()
 
@@ -52,7 +52,7 @@ async def list_freezer(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     )
 
 
-async def add_freezer_item(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def add_freezer_items(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
 
     await query.answer()
@@ -65,13 +65,17 @@ async def add_freezer_item(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 
 async def handle_freezer_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
     items = update.message.text.split("\n")
-    logger.info(f"Adding {items} to freezer")
+    non_empty = list(filter(None, items))
+    logger.info(f"Adding {non_empty} to freezer")
 
-    await update.message.reply_text(f"Added: {items}")
-
+    added = []
     with connect(DB_PATH) as conn:
-        for item in filter(None, items):
-            crud.freezer.add(conn, {"name": item})
+        for item in non_empty:
+            logger.info(f"Adding {item} to freezer")
+            result = crud.freezer.add(conn, {"name": item})
+            added.append(result.data.name)
+
+    await update.message.reply_text(f"Added: {added}")
 
     return ConversationHandler.END
 
@@ -108,7 +112,7 @@ app.add_handler(
 app.add_handler(
     ConversationHandler(
         entry_points=[
-            CallbackQueryHandler(add_freezer_item, pattern="^add_freezer_item$")
+            CallbackQueryHandler(add_freezer_items, pattern="^add_freezer_item$")
         ],
         states={
             ConversationState.freezer_input: [
