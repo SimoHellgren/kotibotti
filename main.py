@@ -23,7 +23,7 @@ from db import connect
 load_dotenv()
 
 TOKEN = os.getenv("BOT_TOKEN")
-DB_PATH = Path(os.getenv("", "./db.sqlite"))
+DB_PATH = Path(os.getenv("DB_PATH", "./var/lib/kotibotti/db.sqlite"))
 
 
 def get_db() -> Connection:
