@@ -3,6 +3,7 @@ import os
 import re
 from enum import Enum, auto
 from pathlib import Path
+from sqlite3 import Connection
 
 from dotenv import load_dotenv
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
@@ -24,6 +25,11 @@ load_dotenv()
 TOKEN = os.getenv("BOT_TOKEN")
 DB_PATH = Path(os.getenv("", "./db.sqlite"))
 
+
+def get_db() -> Connection:
+    return connect(DB_PATH)
+
+
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
 )
@@ -40,7 +46,7 @@ class ConversationState(Enum):
 async def list_freezer(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
 
-    with connect(DB_PATH) as conn:
+    with get_db() as conn:
         items = crud.freezer.get_all(conn)
 
     msg = "\n".join(x.data.name for x in sorted(items, key=lambda x: x.data.name))
@@ -70,7 +76,7 @@ async def handle_freezer_input(update: Update, context: ContextTypes.DEFAULT_TYP
     logger.info(f"Adding {non_empty} to freezer")
 
     added = []
-    with connect(DB_PATH) as conn:
+    with get_db() as conn:
         for item in non_empty:
             logger.info(f"Adding {item} to freezer")
             result = crud.freezer.add(conn, {"name": item})
@@ -84,7 +90,7 @@ async def handle_freezer_input(update: Update, context: ContextTypes.DEFAULT_TYP
 async def edit_freezer_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
 
-    with connect(DB_PATH) as conn:
+    with get_db() as conn:
         items = sorted(crud.freezer.get_all(conn), key=lambda x: x.data.name)
 
     item_keys = [
@@ -123,7 +129,7 @@ async def delete_item(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     _, item_id = query.data.split(":")
 
     # remove from db
-    with connect(DB_PATH) as conn:
+    with get_db() as conn:
         db_item = crud.freezer.delete(conn, item_id)
 
         logger.info(f"Deleted item {db_item.id}")
