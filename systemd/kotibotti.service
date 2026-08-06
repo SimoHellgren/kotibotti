@@ -1,0 +1,15 @@
+[Unit]
+Description=Kotibotti Telegram bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/kotibotti
+EnvironmentFile=%h/.config/kotibotti/kotibotti.env
+StateDirectory=kotibotti
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target
