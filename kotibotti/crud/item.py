@@ -1,6 +1,6 @@
 from sqlite3 import Connection
 
-from models import Item, ItemCreate, ItemKind
+from kotibotti.models import Item, ItemCreate, ItemKind
 
 __all__ = [
     "add",

@@ -1,6 +1,6 @@
 from sqlite3 import Connection
 
-from models import FreezerData, FreezerItem, Item, ItemKind
+from kotibotti.models import FreezerData, FreezerItem, Item, ItemKind
 
 from . import item
 

@@ -15,9 +15,9 @@ from telegram.ext import (
     filters,
 )
 
-import crud
-from config import config
-from db import connect
+from kotibotti import crud
+from kotibotti.config import config
+from kotibotti.db import connect
 
 load_dotenv()
 
