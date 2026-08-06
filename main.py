@@ -1,8 +1,6 @@
 import logging
-import os
 import re
 from enum import Enum, auto
-from pathlib import Path
 from sqlite3 import Connection
 
 from dotenv import load_dotenv
@@ -18,16 +16,14 @@ from telegram.ext import (
 )
 
 import crud
+from config import config
 from db import connect
 
 load_dotenv()
 
-TOKEN = os.getenv("BOT_TOKEN")
-DB_PATH = Path(os.getenv("DB_PATH", "./var/lib/kotibotti/db.sqlite"))
-
 
 def get_db() -> Connection:
-    return connect(DB_PATH)
+    return connect(config.db_path)
 
 
 logging.basicConfig(
@@ -177,7 +173,7 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     return ConversationHandler.END
 
 
-app = ApplicationBuilder().token(TOKEN).build()
+app = ApplicationBuilder().token(config.bot_token).build()
 
 app.add_handler(CommandHandler("pakastin", freezer_menu))
 app.add_handler(
