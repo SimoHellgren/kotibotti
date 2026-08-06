@@ -202,4 +202,11 @@ app.add_handler(
         fallbacks=[CommandHandler("cancel", cancel)],
     )
 )
-app.run_polling()
+
+
+def main():
+    app.run_polling()
+
+
+if __name__ == "__main__":
+    main()
