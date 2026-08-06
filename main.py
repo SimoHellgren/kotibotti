@@ -43,9 +43,13 @@ async def list_freezer(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     query = update.callback_query
 
     with get_db() as conn:
-        items = crud.freezer.get_all(conn)
+        items = sorted(crud.freezer.get_all(conn), key=lambda x: x.data.name.lower())
 
-    msg = "\n".join(x.data.name for x in sorted(items, key=lambda x: x.data.name))
+    if not items:
+        msg = "Pakastin on tyhjä."
+
+    else:
+        msg = "\n".join(x.data.name for x in items)
 
     await query.answer()
 
@@ -87,7 +91,7 @@ async def edit_freezer_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     query = update.callback_query
 
     with get_db() as conn:
-        items = sorted(crud.freezer.get_all(conn), key=lambda x: x.data.name)
+        items = sorted(crud.freezer.get_all(conn), key=lambda x: x.data.name.lower())
 
     item_keys = [
         [
