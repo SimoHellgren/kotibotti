@@ -37,6 +37,7 @@ logger = logging.getLogger(__name__)
 
 class ConversationState(Enum):
     freezer_input = auto()
+    item_name_input = auto()
 
 
 async def list_freezer(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -120,7 +121,41 @@ async def edit_freezer_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) 
 async def edit_item(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
 
-    await query.answer(text="Tämä ei vielä tee mitään :3")
+    # store id in context
+    _, item_id = query.data.split(":")
+    context.user_data["item_id"] = item_id
+
+    await query.answer()
+
+    await context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text="Anna uusi nimi:",
+    )
+
+    return ConversationState.item_name_input
+
+
+async def handle_name_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    new_name = update.message.text
+
+    # get item id from context
+    item_id = context.user_data["item_id"]
+
+    with get_db() as conn:
+        # TODO: figure out a way to only patch (vs post,
+        # which is why we need to get the item first)
+        db_item = crud.freezer.get(conn, item_id)
+
+        # do update
+        new_db_item = crud.freezer.update(
+            conn, item_id, {**db_item.data.model_dump(), "name": new_name}
+        )
+
+    msg = f"Changed name from {db_item.data.name} to {new_db_item.data.name} (item {db_item.id})"
+    logger.info(msg)
+    await update.message.reply_text(msg)
+
+    return ConversationHandler.END
 
 
 async def delete_item(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -184,7 +219,19 @@ app.add_handler(
     CallbackQueryHandler(list_freezer, pattern="^list_freezer$")
 )  # TODO: use constants for this, now magic "number"
 app.add_handler(CallbackQueryHandler(edit_freezer_menu, pattern="^edit_freezer_item$"))
-app.add_handler(CallbackQueryHandler(edit_item, pattern=re.compile(r"^edit_item:\d+$")))
+app.add_handler(
+    ConversationHandler(
+        entry_points=[
+            CallbackQueryHandler(edit_item, pattern=re.compile(r"^edit_item:\d+$"))
+        ],
+        states={
+            ConversationState.item_name_input: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, handle_name_input)
+            ]
+        },
+        fallbacks=[CommandHandler("cancel", cancel)],
+    )
+)
 app.add_handler(
     CallbackQueryHandler(delete_item, pattern=re.compile(r"^delete_item:\d+$"))
 )
