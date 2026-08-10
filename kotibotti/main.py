@@ -121,15 +121,19 @@ async def edit_freezer_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) 
 async def edit_item(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
 
-    # store id in context
+    # get db item and store in context
     _, item_id = query.data.split(":")
-    context.user_data["item_id"] = item_id
+
+    with get_db() as conn:
+        item = crud.freezer.get(conn, item_id)
+
+    context.user_data["item"] = item
 
     await query.answer()
 
     await context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text="Anna uusi nimi:",
+        text=f"Anna uusi nimi ({item.data.name}):",
     )
 
     return ConversationState.item_name_input
@@ -138,20 +142,17 @@ async def edit_item(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 async def handle_name_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     new_name = update.message.text
 
-    # get item id from context
-    item_id = context.user_data["item_id"]
+    # get item from context
+    item = context.user_data["item"]
 
     with get_db() as conn:
-        # TODO: figure out a way to only patch (vs post,
-        # which is why we need to get the item first)
-        db_item = crud.freezer.get(conn, item_id)
-
+        # TODO: figure out a way to only patch (vs post)
         # do update
         new_db_item = crud.freezer.update(
-            conn, item_id, {**db_item.data.model_dump(), "name": new_name}
+            conn, item.id, {**item.data.model_dump(), "name": new_name}
         )
 
-    msg = f"Changed name from {db_item.data.name} to {new_db_item.data.name} (item {db_item.id})"
+    msg = f"Changed name from {item.data.name} to {new_db_item.data.name} (item {item.id})"
     logger.info(msg)
     await update.message.reply_text(msg)
 
