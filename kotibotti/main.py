@@ -129,6 +129,11 @@ async def edit_item(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
     context.user_data["item"] = item
 
+    # also store things to enable editing the keyboard later
+    context.user_data["chat_id"] = query.message.chat_id
+    context.user_data["message_id"] = query.message.message_id
+    context.user_data["reply_markup"] = query.message.reply_markup
+
     await query.answer()
 
     await context.bot.send_message(
@@ -151,6 +156,29 @@ async def handle_name_input(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         new_db_item = crud.freezer.update(
             conn, item.id, {**item.data.model_dump(), "name": new_name}
         )
+
+    # update keyboard (split to sort items only)
+    *item_btns, close_btn = context.user_data["reply_markup"].inline_keyboard
+
+    new_item_btns = [
+        (
+            InlineKeyboardButton(new_name, callback_data=f"edit_item:{item.id}"),
+            delete_btn,
+        )
+        if edit_btn.callback_data == f"edit_item:{item.id}"
+        else (edit_btn, delete_btn)
+        for edit_btn, delete_btn in item_btns
+    ]
+
+    reply_markup = InlineKeyboardMarkup(
+        [*sorted(new_item_btns, key=lambda x: x[0].text), close_btn]
+    )
+
+    await context.bot.edit_message_reply_markup(
+        chat_id=context.user_data["chat_id"],
+        message_id=context.user_data["message_id"],
+        reply_markup=reply_markup,
+    )
 
     msg = f"Changed name from {item.data.name} to {new_db_item.data.name} (item {item.id})"
     logger.info(msg)
